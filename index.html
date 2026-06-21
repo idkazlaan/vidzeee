@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vidzeee by Azeee</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --card: #16161f;
+  --border: #222230;
+  --accent: #7c5cfc;
+  --accent2: #c084fc;
+  --glow: rgba(124,92,252,0.15);
+  --text: #f0f0f8;
+  --muted: #6b6b85;
+  --success: #22d3a0;
+  --danger: #f87171;
+  --warn: #fbbf24;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.97);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem; font-weight: 700;
+  background: linear-gradient(135deg, #7c5cfc, #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo span { font-weight: 300; font-size: 0.82rem; -webkit-text-fill-color: var(--muted); margin-left: 8px; }
+
+.badge {
+  background: var(--glow); border: 1px solid var(--accent);
+  color: var(--accent2); font-size: 0.7rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 20px;
+}
+
+main { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+/* ── UPLOAD ── */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: 16px;
+  padding: 64px 40px; text-align: center; cursor: pointer;
+  background: var(--card); transition: all 0.2s; position: relative; overflow: hidden;
+}
+.upload-zone::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 50% 0%, var(--glow), transparent 70%);
+  opacity:0; transition: opacity 0.3s;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); }
+.upload-zone:hover::before, .upload-zone.drag::before { opacity: 1; }
+.upload-zone h2 { font-family:'Space Grotesk',sans-serif; font-size:1.2rem; margin: 12px 0 8px; }
+.upload-zone p  { color: var(--muted); font-size: 0.86rem; }
+.upload-icon { font-size: 3rem; }
+#fileInput { display: none; }
+
+/* ── STATS ── */
+.stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin: 24px 0;
+}
+.stat {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; text-align: center;
+}
+.stat-val { font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:700; color: var(--accent2); }
+.stat-lbl { font-size: 0.74rem; color: var(--muted); margin-top: 3px; }
+
+/* ── CARD ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 22px; margin-bottom: 20px;
+}
+.card-title {
+  font-family:'Space Grotesk',sans-serif; font-size:0.85rem; font-weight:600;
+  color: var(--muted); text-transform: uppercase; letter-spacing:0.8px;
+  margin-bottom: 16px;
+}
+
+/* ── VIDEO ── */
+#videoEl {
+  width:100%; border-radius:10px; background:#000;
+  max-height:300px; object-fit:contain; display:block;
+}
+
+/* ── TIMELINE SCRUBBER ── */
+.timeline-wrap {
+  margin: 14px 0 8px; position: relative; user-select: none;
+}
+.timeline-track {
+  height: 48px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; position: relative; cursor: crosshair; overflow: hidden;
+}
+.timeline-fill {
+  position: absolute; top: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(124,92,252,0.35), rgba(192,132,252,0.35));
+  border-left: 2px solid var(--accent); border-right: 2px solid var(--accent2);
+  pointer-events: none;
+}
+.timeline-playhead {
+  position: absolute; top: 0; bottom: 0; width: 2px;
+  background: #fff; pointer-events: none; transition: left 0.1s linear;
+}
+.timeline-handle {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 32px; border-radius: 4px; cursor: ew-resize;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 700; z-index: 2;
+}
+.handle-in  { background: var(--accent); margin-left: -7px; }
+.handle-out { background: var(--accent2); margin-left: -7px; }
+.timeline-time {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--muted); margin-top: 6px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex; align-items: center; gap: 10px; margin: 12px 0;
+}
+.btn-icon {
+  width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 1rem;
+  cursor: pointer; display:flex; align-items:center; justify-content:center;
+  transition: all 0.15s;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent2); }
+.time-display {
+  font-family: 'Space Grotesk', monospace; font-size: 0.85rem;
+  color: var(--muted); margin-left: auto;
+}
+
+/* ── SPLIT OPTIONS ── */
+.split-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;
+}
+label { display:block; font-size:0.8rem; color:var(--muted); margin-bottom:5px; font-weight:500; }
+input[type="number"], select {
+  width:100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius:8px; color: var(--text); font-family:'Inter',sans-serif;
+  font-size:0.88rem; padding: 9px 12px; outline:none; transition: border-color 0.2s;
+}
+input[type="number"]:focus, select:focus { border-color: var(--accent); }
+select option { background: var(--surface); }
+
+/* ── CLIPS ── */
+.clips-grid {
+  display: flex; flex-direction:column; gap: 10px;
+  max-height: 380px; overflow-y: auto; padding-right: 4px;
+}
+.clips-grid::-webkit-scrollbar { width: 4px; }
+.clips-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius:4px; }
+
+.clip-row {
+  display:flex; align-items:center; gap:12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+}
+.clip-num {
+  width:28px; height:28px; border-radius:6px; background: var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.75rem; font-weight:700; color:#fff; flex-shrink:0;
+}
+.clip-info { flex:1; }
+.clip-info strong { display:block; font-size:0.86rem; margin-bottom:2px; }
+.clip-info span   { font-size:0.76rem; color: var(--muted); }
+.clip-dl {
+  background: var(--glow); border: 1px solid var(--accent);
+  color: var(--accent2); border-radius:7px; padding:6px 12px;
+  font-size:0.78rem; font-weight:600; cursor:pointer;
+  transition:all 0.15s; white-space:nowrap;
+  font-family:'Inter',sans-serif;
+}
+.clip-dl:hover { background: var(--accent); color:#fff; }
+.clip-dl:disabled { opacity:0.4; cursor:not-allowed; }
+
+.status-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  background: var(--border);
+}
+.status-dot.done    { background: var(--success); }
+.status-dot.working { background: var(--warn); animation: pulse 0.9s infinite; }
+.status-dot.error   { background: var(--danger); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── BUTTONS ── */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:11px 22px; border-radius:9px; border:none;
+  font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:600;
+  cursor:pointer; transition:all 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2)); color:#fff;
+}
+.btn-primary:hover:not(:disabled) { opacity:0.85; transform:translateY(-1px); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.btn-outline {
+  background:transparent; border:1px solid var(--border); color: var(--text);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent2); }
+.btn-full { width:100%; }
+
+/* ── PROGRESS ── */
+.prog-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius:10px; padding:16px; margin-top:14px; display:none;
+}
+.prog-track { background: var(--border); border-radius:4px; height:7px; margin:8px 0 5px; overflow:hidden; }
+.prog-bar { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:4px; transition:width 0.4s; }
+.prog-label { font-size:0.8rem; color:var(--muted); }
+.prog-status { font-size:0.86rem; font-weight:500; }
+
+/* ── NOTICE ── */
+.notice {
+  background: rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.3);
+  border-radius:10px; padding:14px 16px; font-size:0.83rem;
+  color: var(--warn); line-height:1.65; margin-bottom:16px;
+}
+.notice a { color: var(--accent2); }
+.notice strong { display:block; margin-bottom:4px; }
+
+/* ── SIZE WARNING ── */
+.size-warn {
+  border-radius:12px; padding:13px 16px; font-size:0.83rem;
+  line-height:1.6; margin: 12px 0;
+}
+.size-warn.hard { background:rgba(248,113,113,0.07); border:1px solid var(--danger); color:var(--danger); }
+.size-warn.soft { background:rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.35); color:var(--warn); }
+.size-warn a { color: var(--accent2); }
+
+/* ── MISC ── */
+.flex-between { display:flex; justify-content:space-between; align-items:center; }
+.mt14 { margin-top:14px; }
+.mt20 { margin-top:20px; }
+.hidden { display:none !important; }
+
+.empty-state {
+  text-align:center; padding:32px 20px;
+  color: var(--muted); font-size:0.85rem;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vidzeee <span>by Azeee</span></div>
+  <div class="badge">BETA</div>
+</header>
+
+<main>
+
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">🎬</div>
+    <h2>Drop your video here</h2>
+    <p>MP4, MOV, WebM &nbsp;·&nbsp; up to 2 GB &nbsp;·&nbsp; click or drag &amp; drop</p>
+    <input type="file" id="fileInput" accept="video/*"/>
+  </div>
+  <div id="sizeMsg"></div>
+
+  <!-- EDITOR (hidden until video loaded) -->
+  <div id="editor" class="hidden">
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="sDur">—</div><div class="stat-lbl">Duration</div></div>
+      <div class="stat"><div class="stat-val" id="sCnt">—</div><div class="stat-lbl">Clips</div></div>
+      <div class="stat"><div class="stat-val" id="sSz">—</div><div class="stat-lbl">File Size</div></div>
+      <div class="stat"><div class="stat-val" id="sFmt">—</div><div class="stat-lbl">Format</div></div>
+    </div>
+
+    <!-- PLAYER + TIMELINE -->
+    <div class="card">
+      <div class="card-title">🎥 Video Preview &amp; Trim</div>
+      <video id="videoEl" controls></video>
+
+      <!-- playback controls -->
+      <div class="controls mt14">
+        <button class="btn-icon" id="btnPlay" onclick="togglePlay()">▶</button>
+        <button class="btn-icon" title="Jump to In point" onclick="jumpTo('in')">⏮</button>
+        <button class="btn-icon" title="Jump to Out point" onclick="jumpTo('out')">⏭</button>
+        <button class="btn-icon" title="-5s" onclick="skip(-5)">↩</button>
+        <button class="btn-icon" title="+5s" onclick="skip(5)">↪</button>
+        <span class="time-display" id="timeCur">0:00 / 0:00</span>
+      </div>
+
+      <!-- TIMELINE SCRUBBER -->
+      <div class="timeline-wrap">
+        <div class="timeline-track" id="tlTrack">
+          <div class="timeline-fill"  id="tlFill"></div>
+          <div class="timeline-playhead" id="tlHead"></div>
+          <div class="timeline-handle handle-in"  id="hlIn"  data-h="in">IN</div>
+          <div class="timeline-handle handle-out" id="hlOut" data-h="out">OUT</div>
+        </div>
+        <div class="timeline-time">
+          <span id="tlInLbl">0:00</span>
+          <span style="color:var(--accent2);font-weight:600" id="tlSelLbl">0:00 selected</span>
+          <span id="tlOutLbl">0:00</span>
+        </div>
+      </div>
+
+      <div class="flex-between mt14">
+        <div>
+          <button class="btn btn-outline" onclick="setPoint('in')" style="margin-right:8px">[ Set In</button>
+          <button class="btn btn-outline" onclick="setPoint('out')">Set Out ]</button>
+        </div>
+        <button class="btn btn-outline" onclick="resetTrim()">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- SPLIT OPTIONS -->
+    <div class="card">
+      <div class="card-title">✂️ Split into Clips</div>
+      <div class="split-row">
+        <div>
+          <label>Split Mode</label>
+          <select id="splitMode" onchange="onModeChange()">
+            <option value="equal">Equal parts</option>
+            <option value="duration">By clip duration (seconds)</option>
+          </select>
+        </div>
+        <div id="splitValWrap">
+          <label id="splitValLabel">Number of clips</label>
+          <input type="number" id="splitVal" value="10" min="1" max="100"/>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="generateClips()">⚡ Generate Clips</button>
+    </div>
+
+    <!-- SRT NOTE -->
+    <div class="notice">
+      <strong>📄 Need subtitles / captions for your clips?</strong>
+      Download an SRT subtitle file from your original YouTube video using
+      <a href="https://downsub.com" target="_blank" rel="noopener">downsub.com</a> — it's free, paste your YouTube link and download the SRT in any language.
+      You can then import that SRT file into your video editor (CapCut, DaVinci Resolve, Premiere, etc.) to add captions to your shorts.
+    </div>
+
+    <!-- CLIPS LIST -->
+    <div class="card" id="clipsCard">
+      <div class="flex-between" style="margin-bottom:16px">
+        <div class="card-title" style="margin-bottom:0">📋 Clips</div>
+        <button class="btn btn-primary" id="btnExportAll" onclick="exportAll()" disabled>⬇ Download All</button>
+      </div>
+      <div class="clips-grid" id="clipsList">
+        <div class="empty-state">Generate clips to see them here</div>
+      </div>
+      <div class="prog-wrap" id="progWrap">
+        <div class="prog-status" id="progStatus">Preparing…</div>
+        <div class="prog-track"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+        <div class="prog-label" id="progLabel">0%</div>
+      </div>
+    </div>
+
+  </div><!-- /editor -->
+</main>
+
+<script>
+// ═══════════════════════════
+//  STATE
+// ═══════════════════════════
+let videoFile   = null;
+let duration    = 0;
+let inPoint     = 0;
+let outPoint    = 0;
+let clips       = [];
+let dragging    = null;   // 'in' | 'out'
+let dragStartX  = 0;
+let dragStartPct = 0;
+
+const vid     = document.getElementById('videoEl');
+const tlTrack = document.getElementById('tlTrack');
+const tlFill  = document.getElementById('tlFill');
+const tlHead  = document.getElementById('tlHead');
+const hlIn    = document.getElementById('hlIn');
+const hlOut   = document.getElementById('hlOut');
+
+// ═══════════════════════════
+//  UPLOAD
+// ═══════════════════════════
+const uploadZone = document.getElementById('uploadZone');
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadVideo(e.target.files[0]);
+});
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) loadVideo(e.dataTransfer.files[0]);
+});
+
+function loadVideo(file) {
+  const sizeMsg = document.getElementById('sizeMsg');
+  sizeMsg.innerHTML = '';
+  const MB = file.size / 1024 / 1024;
+  const GB = MB / 1024;
+
+  if (file.size > 2 * 1024 * 1024 * 1024) {
+    sizeMsg.innerHTML = `<div class="size-warn hard">
+      <strong>⛔ File too large — ${GB.toFixed(2)} GB</strong>
+      Vidzeee supports up to 2 GB. Compress with <a href="https://handbrake.fr" target="_blank">HandBrake</a> first.
+    </div>`;
+    return;
+  }
+  if (MB > 500) {
+    sizeMsg.innerHTML = `<div class="size-warn soft">
+      <strong>⚠️ Large file — ${MB.toFixed(0)} MB</strong>
+      Supported, but browser processing will be slow. Exporting may take several minutes per clip.
+    </div>`;
+  }
+
+  videoFile = file;
+  const url = URL.createObjectURL(file);
+  vid.src = url;
+  vid.onloadedmetadata = () => {
+    duration = vid.duration;
+    inPoint  = 0;
+    outPoint = duration;
+    clips    = [];
+    document.getElementById('sDur').textContent  = fmt(duration);
+    document.getElementById('sCnt').textContent  = '—';
+    document.getElementById('sSz').textContent   = MB >= 1024 ? GB.toFixed(2)+' GB' : MB.toFixed(1)+' MB';
+    document.getElementById('sFmt').textContent  = file.name.split('.').pop().toUpperCase();
+    document.getElementById('editor').classList.remove('hidden');
+    uploadZone.style.display = 'none';
+    renderClips();
+    updateTimeline();
+  };
+}
+
+// ═══════════════════════════
+//  PLAYER CONTROLS
+// ═══════════════════════════
+vid.addEventListener('timeupdate', () => {
+  const pct = duration ? vid.currentTime / duration : 0;
+  tlHead.style.left = (pct * 100) + '%';
+  document.getElementById('timeCur').textContent = fmt(vid.currentTime) + ' / ' + fmt(duration);
+});
+vid.addEventListener('play',  () => document.getElementById('btnPlay').textContent = '⏸');
+vid.addEventListener('pause', () => document.getElementById('btnPlay').textContent = '▶');
+
+function togglePlay() {
+  vid.paused ? vid.play() : vid.pause();
+}
+function skip(s) {
+  vid.currentTime = Math.max(0, Math.min(duration, vid.currentTime + s));
+}
+function jumpTo(point) {
+  vid.currentTime = point === 'in' ? inPoint : outPoint;
+}
+
+// click on timeline to seek
+tlTrack.addEventListener('click', e => {
+  if (dragging) return;
+  const rect = tlTrack.getBoundingClientRect();
+  const pct  = (e.clientX - rect.left) / rect.width;
+  vid.currentTime = pct * duration;
+});
+
+// ═══════════════════════════
+//  TRIM HANDLES (drag)
+// ═══════════════════════════
+[hlIn, hlOut].forEach(h => {
+  h.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragging = h.dataset.h;
+    const rect = tlTrack.getBoundingClientRect();
+    dragStartX   = e.clientX;
+    dragStartPct = dragging === 'in' ? inPoint / duration : outPoint / duration;
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const rect = tlTrack.getBoundingClientRect();
+  const delta = (e.clientX - dragStartX) / rect.width;
+  let pct = Math.max(0, Math.min(1, dragStartPct + delta));
+  if (dragging === 'in') {
+    inPoint = Math.min(pct * duration, outPoint - 0.5);
+    inPoint = Math.max(0, inPoint);
+  } else {
+    outPoint = Math.max(pct * duration, inPoint + 0.5);
+    outPoint = Math.min(duration, outPoint);
+  }
+  updateTimeline();
+});
+
+document.addEventListener('mouseup', () => { dragging = null; });
+
+// Touch support
+[hlIn, hlOut].forEach(h => {
+  h.addEventListener('touchstart', e => {
+    e.preventDefault();
+    dragging = h.dataset.h;
+    const rect = tlTrack.getBoundingClientRect();
+    dragStartX   = e.touches[0].clientX;
+    dragStartPct = dragging === 'in' ? inPoint / duration : outPoint / duration;
+  }, { passive: false });
+});
+document.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  const rect = tlTrack.getBoundingClientRect();
+  const delta = (e.touches[0].clientX - dragStartX) / rect.width;
+  let pct = Math.max(0, Math.min(1, dragStartPct + delta));
+  if (dragging === 'in') {
+    inPoint = Math.min(pct * duration, outPoint - 0.5);
+    inPoint = Math.max(0, inPoint);
+  } else {
+    outPoint = Math.max(pct * duration, inPoint + 0.5);
+    outPoint = Math.min(duration, outPoint);
+  }
+  updateTimeline();
+}, { passive: true });
+document.addEventListener('touchend', () => { dragging = null; });
+
+function setPoint(which) {
+  if (which === 'in') {
+    inPoint = Math.min(vid.currentTime, outPoint - 0.5);
+  } else {
+    outPoint = Math.max(vid.currentTime, inPoint + 0.5);
+  }
+  updateTimeline();
+}
+
+function resetTrim() {
+  inPoint  = 0;
+  outPoint = duration;
+  updateTimeline();
+}
+
+function updateTimeline() {
+  if (!duration) return;
+  const inPct  = inPoint  / duration * 100;
+  const outPct = outPoint / duration * 100;
+  tlFill.style.left  = inPct + '%';
+  tlFill.style.width = (outPct - inPct) + '%';
+  hlIn.style.left    = inPct + '%';
+  hlOut.style.left   = outPct + '%';
+  document.getElementById('tlInLbl').textContent  = fmt(inPoint);
+  document.getElementById('tlOutLbl').textContent = fmt(outPoint);
+  document.getElementById('tlSelLbl').textContent = fmt(outPoint - inPoint) + ' selected';
+}
+
+// ═══════════════════════════
+//  SPLIT
+// ═══════════════════════════
+function onModeChange() {
+  const mode = document.getElementById('splitMode').value;
+  document.getElementById('splitValLabel').textContent =
+    mode === 'equal' ? 'Number of clips' : 'Clip duration (seconds)';
+  document.getElementById('splitVal').value = mode === 'equal' ? 10 : 60;
+}
+
+function generateClips() {
+  const mode    = document.getElementById('splitMode').value;
+  const val     = parseFloat(document.getElementById('splitVal').value) || 10;
+  const trimDur = outPoint - inPoint;
+  clips = [];
+
+  if (mode === 'equal') {
+    const n   = Math.max(1, Math.round(val));
+    const dur = trimDur / n;
+    for (let i = 0; i < n; i++) {
+      clips.push({ n: i+1, start: inPoint + i*dur, end: inPoint + (i+1)*dur, status: 'idle' });
+    }
+  } else {
+    const dur = Math.max(1, val);
+    let s = inPoint, n = 1;
+    while (s < outPoint - 0.5) {
+      clips.push({ n: n++, start: s, end: Math.min(s + dur, outPoint), status: 'idle' });
+      s += dur;
+    }
+  }
+
+  document.getElementById('sCnt').textContent = clips.length;
+  renderClips();
+  document.getElementById('btnExportAll').disabled = false;
+}
+
+// ═══════════════════════════
+//  CLIPS LIST
+// ═══════════════════════════
+function renderClips() {
+  const list = document.getElementById('clipsList');
+  if (!clips.length) {
+    list.innerHTML = '<div class="empty-state">Generate clips to see them here</div>';
+    return;
+  }
+  list.innerHTML = clips.map(c => `
+    <div class="clip-row" id="cr${c.n}">
+      <div class="status-dot ${c.status === 'done' ? 'done' : c.status === 'working' ? 'working' : c.status === 'error' ? 'error' : ''}" id="dot${c.n}"></div>
+      <div class="clip-num">${c.n}</div>
+      <div class="clip-info">
+        <strong>Clip ${c.n}</strong>
+        <span>${fmt(c.start)} → ${fmt(c.end)} &nbsp;(${fmt(c.end - c.start)})</span>
+      </div>
+      <button class="clip-dl" id="dlBtn${c.n}" onclick="exportClip(${c.n - 1})">⬇ Export</button>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════
+//  EXPORT — MediaRecorder
+// ═══════════════════════════
+let exporting = false;
+
+async function exportAll() {
+  if (exporting || !clips.length) return;
+  exporting = true;
+  document.getElementById('btnExportAll').disabled = true;
+  document.getElementById('progWrap').style.display = 'block';
+
+  for (let i = 0; i < clips.length; i++) {
+    setClipStatus(i, 'working');
+    document.getElementById('progStatus').textContent = `Exporting clip ${i+1} of ${clips.length}…`;
+    setProgress((i / clips.length) * 100);
+    try {
+      await exportClip(i);
+      setClipStatus(i, 'done');
+    } catch(e) {
+      setClipStatus(i, 'error');
+      console.error('Clip export error', e);
+    }
+  }
+
+  setProgress(100);
+  document.getElementById('progStatus').textContent = `✅ All ${clips.length} clips exported!`;
+  document.getElementById('progLabel').textContent  = '100%';
+  document.getElementById('btnExportAll').disabled  = false;
+  exporting = false;
+}
+
+function exportClip(idx) {
+  const clip = clips[idx];
+  setClipStatus(idx, 'working');
+
+  return new Promise((resolve, reject) => {
+    // Create a fresh video element for this clip
+    const v = document.createElement('video');
+    v.src   = URL.createObjectURL(videoFile);
+    v.muted = false;
+    v.preload = 'auto';
+
+    v.addEventListener('loadedmetadata', () => {
+      v.currentTime = clip.start;
+    });
+
+    v.addEventListener('seeked', startCapture, { once: true });
+
+    function startCapture() {
+      const canvas = document.createElement('canvas');
+      canvas.width  = v.videoWidth  || 1280;
+      canvas.height = v.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+
+      // Capture video stream from canvas
+      const videoStream = canvas.captureStream(30);
+
+      // Audio context to capture audio
+      let finalStream;
+      try {
+        const actx  = new (window.AudioContext || window.webkitAudioContext)();
+        const src   = actx.createMediaElementSource(v);
+        const dest  = actx.createMediaStreamDestination();
+        src.connect(dest);
+        src.connect(actx.destination);
+        const audioTrack = dest.stream.getAudioTracks()[0];
+        if (audioTrack) {
+          finalStream = new MediaStream([...videoStream.getVideoTracks(), audioTrack]);
+        } else {
+          finalStream = videoStream;
+        }
+      } catch(e) {
+        finalStream = videoStream;
+      }
+
+      // Pick best supported codec
+      const mimes = [
+        'video/mp4; codecs=avc1.42E01E,mp4a.40.2',
+        'video/webm; codecs=vp9,opus',
+        'video/webm; codecs=vp8,opus',
+        'video/webm',
+      ];
+      const mime = mimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+
+      let recorder;
+      try {
+        recorder = new MediaRecorder(finalStream, mime ? { mimeType: mime } : {});
+      } catch(e) {
+        recorder = new MediaRecorder(finalStream);
+      }
+
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const actualMime = recorder.mimeType || 'video/webm';
+        const ext  = actualMime.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(chunks, { type: actualMime });
+        if (blob.size < 1000) {
+          reject(new Error('Empty output'));
+          return;
+        }
+        triggerDownload(blob, `vidzeee_clip_${clip.n}.${ext}`);
+        setClipStatus(idx, 'done');
+        URL.revokeObjectURL(v.src);
+        resolve();
+      };
+      recorder.onerror = e => reject(e.error || new Error('Recorder error'));
+
+      // Draw loop
+      let animId;
+      const draw = () => {
+        if (v.currentTime >= clip.end || v.ended) {
+          cancelAnimationFrame(animId);
+          v.pause();
+          recorder.stop();
+          return;
+        }
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        animId = requestAnimationFrame(draw);
+      };
+
+      recorder.start(100); // collect data every 100ms
+      v.play().then(() => {
+        draw();
+      }).catch(err => {
+        recorder.stop();
+        reject(err);
+      });
+
+      // Safety stop at end time
+      const timeout = ((clip.end - clip.start) + 3) * 1000;
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          cancelAnimationFrame(animId);
+          v.pause();
+          recorder.stop();
+        }
+      }, timeout);
+    }
+  });
+}
+
+function setClipStatus(idx, status) {
+  clips[idx].status = status;
+  const dot = document.getElementById('dot' + clips[idx].n);
+  const btn = document.getElementById('dlBtn' + clips[idx].n);
+  if (dot) {
+    dot.className = 'status-dot' + (status === 'done' ? ' done' : status === 'working' ? ' working' : status === 'error' ? ' error' : '');
+  }
+  if (btn) {
+    btn.textContent = status === 'done' ? '✅ Done' : status === 'working' ? '⏳…' : status === 'error' ? '❌ Retry' : '⬇ Export';
+    btn.disabled    = status === 'working';
+  }
+}
+
+function setProgress(pct) {
+  document.getElementById('progBar').style.width  = pct + '%';
+  document.getElementById('progLabel').textContent = Math.round(pct) + '%';
+}
+
+function triggerDownload(blob, name) {
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+
+// ═══════════════════════════
+//  UTILS
+// ═══════════════════════════
+function fmt(s) {
+  s = Math.max(0, s || 0);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  const ms  = Math.round((s % 1) * 10);
+  if (h > 0) return `${h}:${p(m)}:${p(sec)}`;
+  return `${m}:${p(sec)}.${ms}`;
+}
+function p(n) { return String(n).padStart(2, '0'); }
+</script>
+</body>
+</html>
